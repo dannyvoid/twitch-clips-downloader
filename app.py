@@ -14,10 +14,10 @@ downloaded = 0
 
 # user settings
 retries = 10
-download_archive = "{username}/history.txt"
-outtmpl = "{username}/clips/%(id)s_twitch.%(ext)s"
 log_file_size_kb = 200
 timeframe_default = "24hr"
+download_archive = "{username}/history.txt"
+outtmpl = "{username}/clips/%(id)s_twitch.%(ext)s"
 
 # dev settings
 format_to_download = "bv*+ba/b"
@@ -48,9 +48,16 @@ def write_log(username, type, msg):
 
 
 def scrape_clips(username, timeframe="24hr"):
-    url = f"https://www.twitch.tv/{username}/clips?filter=clips&range={timeframe}"
+    url = (
+        f"https://www.twitch.tv/{username}/clips?filter=clips&range={timeframe}".lower()
+    )
+    absolute_output = os.path.abspath(outtmpl.format(username=username)).lower()
+    absolute_archive = os.path.abspath(
+        download_archive.format(username=username)
+    ).lower()
     print(f"Scraping: {url}")
-    print(f"Output:   {username}/\n")
+    print(f"Output:   {absolute_output}")
+    print(f"History:  {absolute_archive}\n")
 
     class MyLogger(object):
         def debug(self, msg):
@@ -137,22 +144,22 @@ def main():
     if downloaded > 0:
         print(f"\nDownloaded {downloaded} new clips." + " " * 50)
         print(f"Format: {outtmpl.format(username=username)}")
+        countdown(10)
     else:
         print("No new clips found." + " " * 50)
-
-    countdown(10)
+        countdown(5)
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Exiting...")
+        print("Exiting..." + " " * 50)
         sys.exit(0)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        input("Press enter to exit...")
+        input("Press enter to exit..." + " " * 50)
         sys.exit(1)
     finally:
         cursor.show()
