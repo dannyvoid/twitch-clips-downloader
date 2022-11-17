@@ -16,18 +16,23 @@ downloaded = 0
 retries = 10
 log_file_size_kb = 200
 timeframe_default = "24hr"
-download_archive = "{username}/history.txt"
-outtmpl = "{username}/clips/%(id)s_twitch.%(ext)s"
+root = "root/"
+name_format = "clips/%(upload_date)s-%(id)s.%(ext)s"
 
 # dev settings
 format_to_download = "bv*+ba/b"
 timestring = "%Y-%m-%d %I:%M:%S.%f"
 timeframe_options = ["24hr", "7d", "30d", "all"]
+output_dir = os.path.join(root, "{username}", "twitch-clips")
+outtmpl = os.path.normpath(os.path.join(output_dir, name_format))
+download_archive = os.path.normpath(os.path.join(output_dir, "history.txt"))
 
 
 def countdown(seconds):
     for i in range(seconds, 0, -1):
         print(f"Exiting in {i} seconds...   ", end="\r")
+        if i == 1:
+            print("                         ", end="\r")
         sleep(1)
 
 
@@ -36,28 +41,30 @@ def write_log(username, type, msg):
         now = datetime.now().strftime(timestring)[:-3]
     else:
         now = datetime.now().strftime(timestring)
-    log = f"{username}/{type}.log"
+
+    log_dir = output_dir.format(username=username)
+    log_type = "{type}.log".format(type=type)
+
+    log = os.path.join(log_dir, log_type)
+    log = os.path.normpath(log)
     if os.path.exists(log):
         if os.path.getsize(log) > log_file_size_kb * 1024:
             os.remove(log)
 
-    if not os.path.exists(username):
-        os.makedirs(username)
     with open(log, "a") as f:
         f.write(f"{now} {msg}\n")
 
 
 def scrape_clips(username, timeframe="24hr"):
-    url = (
-        f"https://www.twitch.tv/{username}/clips?filter=clips&range={timeframe}".lower()
-    )
-    absolute_output = os.path.abspath(outtmpl.format(username=username)).lower()
-    absolute_archive = os.path.abspath(
-        download_archive.format(username=username)
-    ).lower()
+    url = f"https://www.twitch.tv/{username}/clips?filter=clips&range={timeframe}"
+    abs_output = os.path.abspath(outtmpl.format(username=username))
+    abs_archive = os.path.abspath(download_archive.format(username=username))
     print(f"Scraping: {url}")
-    print(f"Output:   {absolute_output}")
-    print(f"History:  {absolute_archive}\n")
+    print(f"Output:   {abs_output}")
+    print(f"History:  {abs_archive}\n")
+
+    if not os.path.exists(output_dir.format(username=username)):
+        os.makedirs(output_dir.format(username=username))
 
     class MyLogger(object):
         def debug(self, msg):
@@ -143,7 +150,7 @@ def main():
 
     if downloaded > 0:
         print(f"\nDownloaded {downloaded} new clips." + " " * 50)
-        print(f"Format: {outtmpl.format(username=username)}")
+        print(f"Format: {outtmpl.format(username=username)}\n")
         countdown(10)
     else:
         print("No new clips found." + " " * 50)
