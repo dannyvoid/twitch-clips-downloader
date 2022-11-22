@@ -9,3 +9,5 @@ app.py can be ran from command line:
 timeframe options being: ["24hr", "7d", "30d", "all"]
 
 schedule.py will create a users.txt file that you must fill out
+
+edit line #10 to your preferred ranges with the automatic scrape.
